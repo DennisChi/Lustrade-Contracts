@@ -53,6 +53,16 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
         _;
     }
 
+    modifier onlyApprovedOrOwner(address tokenAddress, uint256 tokenId) {
+        IERC721 rwa = IERC721(tokenAddress);
+        address owner = rwa.ownerOf(tokenId);
+        address approver = rwa.getApproved(tokenId);
+        if (msg.sender != owner && msg.sender != approver) {
+            revert NotApprovedOrOwner();
+        }
+        _;
+    }
+
     function addSupportToken(address tokenAddress) external onlyOwner {
         isAccepted[tokenAddress] = true;
     }
@@ -65,7 +75,12 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
         address tokenAddress,
         uint256 tokenId,
         uint256 price
-    ) external onlyOwner onlyAccepted(tokenAddress) {
+    )
+        external
+        onlyOwner
+        onlyAccepted(tokenAddress)
+        onlyApprovedOrOwner(tokenAddress, tokenId)
+    {
         priceOf[tokenAddress][tokenId] = price;
 
         emit List(tokenAddress, tokenId, price);
@@ -74,7 +89,12 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
     function delist(
         address tokenAddress,
         uint256 tokenId
-    ) external onlyOwner onlyAccepted(tokenAddress) {
+    )
+        external
+        onlyOwner
+        onlyAccepted(tokenAddress)
+        onlyApprovedOrOwner(tokenAddress, tokenId)
+    {
         priceOf[tokenAddress][tokenId] = 0;
 
         emit Delist(tokenAddress, tokenId);

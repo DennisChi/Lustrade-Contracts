@@ -6,4 +6,5 @@ interface ILustradeShopErrors {
     error NotList();
     error InvalidMsgValue(uint256 expected, uint256 actual);
     error CannotBuy(uint256 requiredLevel, uint256 passcardLevel);
+    error NotApprovedOrOwner();
 }
