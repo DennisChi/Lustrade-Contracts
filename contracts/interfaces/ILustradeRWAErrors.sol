@@ -7,5 +7,13 @@ interface ILustradeRWAErrors {
     error IsRedeeming(uint256 tokenId);
     error IsNotRedeeming(uint256 tokenId);
     error NotApprovedOrOwner(address caller, uint256 tokenId);
-    error ArrayLengthNotEqual(uint256 len1, uint256 len2, uint256 len3);
+    error ArrayLengthNotEqual(
+        uint256 toArrayLength,
+        uint256 tokenURIArrayLength,
+        uint256 chipAddressArrayLength,
+        uint256 dataArrayLength
+    );
+    error NotMinted(uint256 tokenId);
+    error InvalidBlockNumber();
+    error BlockNumberTooOld();
 }
