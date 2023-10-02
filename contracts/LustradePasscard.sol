@@ -20,9 +20,9 @@ contract LustradeClubPasscard is
     bytes32 public constant ADD_POINTS = keccak256("ADD_POINTS");
     bytes32 public constant ADD_LEVEL = keccak256("ADD_LEVEL");
 
-    mapping(uint256 => uint256) pointsOfToken;
-    mapping(uint256 => uint256) levelOfToken;
-    mapping(uint256 => uint256) requiredPointsOfLevel;
+    mapping(uint256 => uint256) public pointsOfToken;
+    mapping(uint256 => uint256) public levelOfToken;
+    mapping(uint256 => uint256) public requiredPointsOfLevel;
     mapping(uint256 => uint256) displayLevelOfToken;
     mapping(uint256 => string) baseURIOfLevel;
 
