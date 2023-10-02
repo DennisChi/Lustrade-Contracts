@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
     using SafeMath for uint256;
 
-    LustradeClubPasscard immutable passcard;
+    LustradePasscard immutable passcard;
 
     uint256 globalDiscount;
 
@@ -43,7 +43,7 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
 
     constructor(address owner, address passcardAddress) {
         _transferOwnership(owner);
-        passcard = LustradeClubPasscard(passcardAddress);
+        passcard = LustradePasscard(passcardAddress);
     }
 
     modifier onlyAccepted(address tokenAddress) {

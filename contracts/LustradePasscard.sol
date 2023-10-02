@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Consecutive.sol";
 
-contract LustradeClubPasscard is
+contract LustradePasscard is
     ERC721Consecutive,
     AccessControl,
     ILustradePasscardEvents,
