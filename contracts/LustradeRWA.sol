@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.19;
 
-import "./interfaces/ILustradeRWAErrors.sol";
-import "./interfaces/ILustradeRWAEvents.sol";
+import "./interfaces/ILustradeRWA.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -10,13 +9,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 import "@chiru-labs/pbt/src/IPBT.sol";
 
-contract LustradeRWA is
-    ERC721URIStorage,
-    Ownable,
-    IPBT,
-    ILustradeRWAErrors,
-    ILustradeRWAEvents
-{
+contract LustradeRWA is ILustradeRWA, ERC721URIStorage, Ownable {
     using ECDSA for bytes32;
 
     uint256 public MaxBlockhashValidWindow = 100;
@@ -32,37 +25,30 @@ contract LustradeRWA is
     }
 
     modifier onlyApproverOrOwner(address from, uint256 tokenId) {
-        if (!_isApprovedOrOwner(from, tokenId)) {
-            revert NotApprovedOrOwner(msg.sender, tokenId);
-        }
+        require(
+            ERC721._isApprovedOrOwner(from, tokenId),
+            "LR: only approved or owner"
+        );
         _;
     }
 
     modifier onlyStaking(uint256 tokenId) {
-        if (!isStaking[tokenId]) {
-            revert IsNotStaking(tokenId);
-        }
+        require(isStaking[tokenId], "LR: must be staking");
         _;
     }
 
     modifier onlyRedeeming(uint256 tokenId) {
-        if (!isRedeeming[tokenId]) {
-            revert IsNotRedeeming(tokenId);
-        }
+        require(isRedeeming[tokenId], "LR: must be reeeming");
         _;
     }
 
     modifier notStaking(uint256 tokenId) {
-        if (isStaking[tokenId]) {
-            revert IsStaking(tokenId);
-        }
+        require(!isStaking[tokenId], "LR: must not be staking");
         _;
     }
 
     modifier notRedeeming(uint256 tokenId) {
-        if (isRedeeming[tokenId]) {
-            revert IsRedeeming(tokenId);
-        }
+        require(!isRedeeming[tokenId], "LR: must not be redeeming");
         _;
     }
 
@@ -121,18 +107,12 @@ contract LustradeRWA is
         bytes[] calldata datas
     ) external onlyOwner {
         uint256 leng = tos.length;
-        if (
-            leng != tokenURIs.length ||
-            leng != datas.length ||
-            leng != chipAddresses.length
-        ) {
-            revert ArrayLengthNotEqual(
-                leng,
-                tokenURIs.length,
-                datas.length,
-                chipAddresses.length
-            );
-        }
+        require(
+            leng == tokenURIs.length &&
+                leng == datas.length &&
+                leng == chipAddresses.length,
+            "LR: array length is not equal"
+        );
         uint256 tokenId = tokenSupplied;
         for (uint256 i = 0; i < leng; i++) {
             tokenId += 1;
@@ -169,9 +149,7 @@ contract LustradeRWA is
 
     function tokenIdFor(address chipAddress) external view returns (uint256) {
         uint256 tokenId = tokenIdOfChipAddress[chipAddress];
-        if (!_exists(tokenId)) {
-            revert NotMinted(tokenId);
-        }
+        require(_exists(tokenId), "LR: token not minted");
         return tokenId;
     }
 
@@ -180,9 +158,7 @@ contract LustradeRWA is
         bytes calldata payload,
         bytes calldata signature
     ) external view returns (bool) {
-        if (!_exists(tokenId)) {
-            revert NotMinted(tokenId);
-        }
+        require(_exists(tokenId), "LR: token not minted");
         bytes32 signedHash = keccak256(payload).toEthSignedMessageHash();
         address recoveredAddress = signedHash.recover(signature);
         address chipAddress = chipAddressOfTokenId[tokenId];
@@ -234,9 +210,10 @@ contract LustradeRWA is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override returns (bool) {
+    ) public view virtual override(ERC721URIStorage, IERC165) returns (bool) {
         return
-            ERC721.supportsInterface(interfaceId) || interfaceId == 0x4901df9f;
+            ERC721URIStorage.supportsInterface(interfaceId) ||
+            interfaceId == 0x4901df9f;
     }
 
     function _transferTokenWithChip(
@@ -244,13 +221,15 @@ contract LustradeRWA is
         uint256 blockNumberUsedInSig,
         bool useSafeTransferFrom
     ) internal {
-        if (block.number <= blockNumberUsedInSig) {
-            revert InvalidBlockNumber();
-        }
+        require(
+            block.number > blockNumberUsedInSig,
+            "LR: invalid block number"
+        );
         unchecked {
-            if (block.number - blockNumberUsedInSig > MaxBlockhashValidWindow) {
-                revert BlockNumberTooOld();
-            }
+            require(
+                block.number - blockNumberUsedInSig > MaxBlockhashValidWindow,
+                "LR: block number too old"
+            );
         }
 
         bytes32 blockHash = blockhash(blockNumberUsedInSig);
@@ -259,15 +238,10 @@ contract LustradeRWA is
         address chipAddress = signedHash.recover(signatureFromChip);
 
         uint256 tokenId = tokenIdOfChipAddress[chipAddress];
-        if (!_exists(tokenId)) {
-            revert NotMinted(tokenId);
-        }
-        if (!isStaking[tokenId]) {
-            revert IsNotStaking(tokenId);
-        }
-        if (isRedeeming[tokenId]) {
-            revert IsRedeeming(tokenId);
-        }
+
+        require(_exists(tokenId), "LR: token not minted");
+        require(isStaking[tokenId], "LR: must be stking");
+        require(!isRedeeming[tokenId], "LR: must not be redeeming");
 
         if (useSafeTransferFrom) {
             _safeTransfer(ownerOf(tokenId), _msgSender(), tokenId, "");

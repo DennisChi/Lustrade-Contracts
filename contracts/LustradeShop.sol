@@ -3,13 +3,12 @@ pragma solidity ^0.8.19;
 
 import "./LustradePasscard.sol";
 
-import "./interfaces/ILustradeShopEvents.sol";
-import "./interfaces/ILustradeShopErrors.sol";
+import "./interfaces/ILustradeShop.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
+contract LustradeShop is Ownable, ILustradeShop {
     using SafeMath for uint256;
 
     LustradePasscard immutable passcard;
@@ -47,9 +46,7 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
     }
 
     modifier onlyAccepted(address tokenAddress) {
-        if (!isAccepted[tokenAddress]) {
-            revert NotAccepted();
-        }
+        require(isAccepted[tokenAddress], "LS: token is not supported");
         _;
     }
 
@@ -57,9 +54,10 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
         IERC721 rwa = IERC721(tokenAddress);
         address owner = rwa.ownerOf(tokenId);
         address approver = rwa.getApproved(tokenId);
-        if (msg.sender != owner && msg.sender != approver) {
-            revert NotApprovedOrOwner();
-        }
+        require(
+            msg.sender == owner || msg.sender == approver,
+            "LS: now owner or approved"
+        );
         _;
     }
 
