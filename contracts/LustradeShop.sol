@@ -112,7 +112,7 @@ contract LustradeShop is Ownable, ILustradeShopEvents, ILustradeShopErrors {
         }
 
         uint256 purchasableLevel = purchasableLevelOf[tokenAddress];
-        uint256 passcardLevel = passcard.levelOfToken(passcardId);
+        uint256 passcardLevel = passcard.levelOf(passcardId);
         if (passcardLevel < purchasableLevel) {
             revert CannotBuy(purchasableLevel, passcardLevel);
         }
